@@ -18,6 +18,55 @@
 
 4. benchmarks / load-testing tools
 
+### Pre-aggregation
+
+1. Configuration
+
+   ```erlang
+   -type metric_name()            :: binary() | atom().
+   -type tag_list()               :: proplists:proplist().
+   -type time_unit()              :: seconds | minutes | hours | days.
+
+   -type pre_aggregation_config() :: {pre_aggregation, aggregates()}.
+   -type aggregates()             :: list(aggregate()).
+
+   -type aggregate()              :: {what(), when(), how(), using()}.
+
+   -type what()                   :: [{name, metric_name()} |
+                                       {tags, tag_list()}].
+
+   -type when()                   :: on_demand |
+                                     {every, {non_neg_integer(), entries} |
+                                             {non_neg_integer(), time_unit()}}.
+
+   -type how()                    :: [aggregate_specs()].
+   -type aggregate_tag()          :: atom() | binary().
+   -type aggregate_sample()       :: {non_neg_integer(), time_unit()}.
+   -type aggregate_overlap()      :: {non_neg_integer(), time_unit()}.
+   -type aggregate_specs()        :: {aggregate_tag(),
+                                      aggregate_sample(),
+                                      aggregate_overlap()}.
+
+   -type using()                  :: [{aggregate_tag_name, atom() | binary()}].
+   ```
+
+2. Configuration examples
+
+   ```erlang
+   {env, [{pre_aggregation,
+           [
+            {[{name, "tx"}, {tags, [{interface, eth0}]}],
+             [{every, {30, seconds}}],
+             [{'1sec', {1, seconds}, {30, seconds}},
+              {'1min', {1, minutes}, {5, minutes}}],
+             [{aggregate_tag_name, aggregate}]}
+           ]
+          }
+         ]
+   }
+   ```
+
+
 ### Detailed implementation status
 
 - [x] Configuration
