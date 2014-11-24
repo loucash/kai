@@ -2,7 +2,7 @@
 -author('Adam Rutkowski <hq@mtod.org>').
 
 -export([init/1]).
--export([fetch/0]).
+-export([fetch/0, fetch/2]).
 -export([join/0]).
 -export([leave/0]).
 
@@ -25,6 +25,24 @@ fetch() ->
             {error, no_connections_available};
         {error, _}=E ->
             E
+    end.
+
+fetch(Fn, N) ->
+    case kai_pool:fetch() of
+        {ok, Conn} ->
+            Response = Fn(Conn),
+            fetch_response(Fn, Response, N);
+        {error, R} ->
+            {error, {kairosdb, R}}
+    end.
+
+fetch_response(_Fn, Response, 0) ->
+    Response;
+fetch_response(Fn, Response, N) ->
+    case Response of
+        {error, connecting} ->
+            fetch(Fn, N - 1);
+        _ -> Response
     end.
 
 leave() ->

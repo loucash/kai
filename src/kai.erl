@@ -50,22 +50,18 @@ put_metric(M, V, Tags) ->
 -spec put_metric(metric_name(), timestamp(), metric_value(), metric_tags()) ->
     ok | {error, any()}.
 put_metric(M, TS, V, Tags) ->
-    case kai_pool:fetch() of
-        {ok, Conn} ->
-            kai_conn:put_metric(Conn, M, TS, V, Tags);
-        {error, R} ->
-            {error, {kairosdb, R}}
-    end.
+    CheckoutRetry = env(telnet_checkout_retry, 0),
+    kai_pool:fetch(
+      fun(Conn) -> kai_conn:put_metric(Conn, M, TS, V, Tags) end,
+      CheckoutRetry).
 
 -spec kairosdb_version() ->
     {ok, {kairosdb, binary()}} | {error, any()}.
 kairosdb_version() ->
-    case kai_pool:fetch() of
-        {ok, Conn} ->
-            kai_conn:version(Conn);
-        {error, R} ->
-            {error, {kairosdb, R}}
-    end.
+    CheckoutRetry = env(telnet_checkout_retry, 0),
+    kai_pool:fetch(
+      fun(Conn) -> kai_conn:version(Conn) end,
+      CheckoutRetry).
 
 now_to_epoch_msecs() ->
     {Megasecs, Secs, Microsecs} = os:timestamp(),
